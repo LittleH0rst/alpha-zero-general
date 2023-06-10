@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 sys.path.append('..')
 from Game import Game
-from .OthelloLogic import Board
+from .NineMensMorrisLogic import Board
 import numpy as np
 
 class OthelloGame(Game):
