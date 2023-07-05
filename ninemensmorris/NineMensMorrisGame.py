@@ -43,9 +43,9 @@ class NineMensMorrisGame(Game):
             actionSize: number of all possible actions
         
         What are all possible actions? Viewed from one player, each piece can
-        be placed anywhere on the map, makes 24 actions per piece. If a mill is formed,
-        with that move, the acting player gets to remove a piece from the
-        oppenent. That makes 48 actions per piece in total.
+        be placed anywhere on the map, makes 24 actions per piece. If a mill 
+        is formed, with that move, the acting player gets to remove a piece 
+        from the oppenent. That makes 48 actions per piece in total.
         actionsPerPiece = 48
         The result in total should come to 
         actionsPerPiece * numberOfPiecesPlayerOne + actionsPerPiece * numberOfPiecesPlayerTwo
