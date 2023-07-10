@@ -59,7 +59,7 @@ class Board():
         self.current_moves = 0
         
     
-    def get_all_moves(self, color):
+    def get_all_moves(self):
         
         """
         Move can be used in the same way as action.
@@ -163,14 +163,14 @@ class Board():
         (1 for white, -1 for black)
         """
         game_phase = get_game_phase(self, player)
-        
-        
-        
-        
-        
-        
-        
-        return list(moves)
+       
+        if game_phase == 0:
+            return list(get_legal_moves_0(self, player))
+            
+        elif game_phase == 1:
+            return list(get_legal_moves_1(self, player))
+        elif game_phase == 2:
+            return list(get_legal_moves_2(self, player))
     
     """
     Looks at the board, given the current player and identifies the
@@ -472,7 +472,7 @@ class Board():
     legal moves for the current gamestate, given that the player is
     in Phase 2
     """
-    def get_legal_moves_2(self, color):
+    def get_legal_moves_2(self, player):
         
         moves = []
         
@@ -510,9 +510,9 @@ class Board():
         return list(moves)
     
     
-    def has_legal_moves(self, color):
+    def has_legal_moves(self, player):
         
-        return (len(get_legal_moves(self, color)) > 0)
+        return (len(get_legal_moves(self, player)) > 0)
     
     
     def execute_move(self, move, player):
@@ -527,18 +527,4 @@ class Board():
             self.pieces[move[2]] = 0
             self.current_moves += 1
         self.pieces[move[1]] = player
-        
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     

@@ -35,7 +35,7 @@ class NineMensMorrisGame(Game):
             (x,y): a tuple of board dimensions
         """
         # (a,b) tuple
-        return (self.n, self.n)
+        return (3, 8)
 
     def getActionSize(self):
         """
@@ -46,12 +46,13 @@ class NineMensMorrisGame(Game):
         be placed anywhere on the map, makes 24 actions per piece. If a mill 
         is formed, with that move, the acting player gets to remove a piece 
         from the oppenent. That makes 48 actions per piece in total.
-        actionsPerPiece = 48
-        The result in total should come to 
-        actionsPerPiece * numberOfPiecesPlayerOne + actionsPerPiece * numberOfPiecesPlayerTwo
+        24*24 -> Actions in Phase 0 (24 positions to place, 23 positions to take or none (+1)
+        24*23*23 -> Actions in Phases 1 and 2 (24 possible origins, 23 positions to move to, 
+        22 pieces to take  or none (+1)
+        The result in total should come to 576 + 12696 = 13272
         """
         # return number of actions
-        return self.n*self.n + 1
+        return len(b.get_all_moves())
 
     def getNextState(self, board, player, action):
         """
