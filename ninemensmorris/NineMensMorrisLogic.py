@@ -49,14 +49,9 @@ class Board():
     
     Actions are stored in a list of tuples of the form:
         action = [piece_location, move_location, remove_piece]
-    """
-
-    PLAYER          = [-1, 1]
-    PLAYER_COLOUR   = ['Black', 'White']
-    PIECES_TO_PLACE = [9, 9]
-    START_STATE     = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]   
+    """   
     MAX_MOVES_WITHOUT_MILL = 60
-s
+
     def __init__(self, current_player = 1):
         "Set up initial board configuration."
         self.pieces = np.zeros((24), dtype='int')
@@ -163,11 +158,11 @@ s
     - for the possible mills, only mark the moves as legal, that take an enemy piece
     - for all other empty positions, only mark the placement as legal
     """
-    def get_legal_moves(self, color):
+    def get_legal_moves(self, player):
         """Returns all the legal moves for the given color.
         (1 for white, -1 for black)
         """
-        
+        game_phase = get_game_phase(self, player)
         
         
         
@@ -183,9 +178,10 @@ s
     """
     def get_game_phase(self, player):
         
+        current_player = player
         if player == -1:
-            player = 0
-        if remaining[player] >= 1: 
+            current_player = 0
+        if remaining[current_player] >= 1: 
             return 0
         elif count_player_pieces(self, player) <= 3:
             return 2
@@ -347,20 +343,20 @@ s
                         if position == 7:
                             return (0, 6, 15)
                         else:
-                            return (position + 1, position - 1, position + 8)
+                            return (position - 1, position + 1, position + 8)
                             
                         
                     elif position in [9,11,13,15]: #middle ring
                         if position == 15:
                             return (7, 8, 14, 23)
                         else:
-                            return (position + 1, position - 1, position + 8, position - 8)
+                            return (position - 8, position - 1, position + 1, position + 8)
                         
                     elif position in [17,19,21,23]: #outer ring
                         if position == 23:
                             return (15, 16, 22)
                         else:
-                            return (position + 1, position - 1, position - 8) 
+                            return (position - 8, position - 1, position + 1) 
                     
         
         return
@@ -417,9 +413,9 @@ s
         for move in empty_locations:
             if move in mill_moves
                 for enemy in enemies_to_take:
-                    moves.append('none',move,enemy)
+                    moves.append('none',move[1],enemy)
             else:
-                moves.append('none',move,'none')
+                moves.append('none',move[1],'none')
             
         
         return list(moves)
@@ -432,6 +428,8 @@ s
     """
     def get_legal_moves_1(self, player):
         
+        moves = []
+        
         #get enemy pieces that can be taken if a mill is formed
         enemies_outside_mills = get_pieces_outside_mills(self, -player)
         if len(enemies_outside_mills) > 0:
@@ -439,9 +437,10 @@ s
         else:
             enemies_to_take = get_player_pieces(self, -player)
             
-            
+        #get the current players pieces that will be moved    
         current_positions = get_player_pieces(self, player)
         
+        #creating the first part of the moves
         part_moves = []
         
         for position in current_positions:
@@ -451,7 +450,17 @@ s
                 if self.pieces[neighbours[index]] == 0:
                     part_moves.append(position, neighbours[index])
                 index += 1
-            
+                
+        #finding the part moves that create mills, then pairing them accordingly with enemy pieces to beat
+        #get moves -> for each move_location, check if a mill is formed (check row(s))
+        mill_moves = get_possible_mills(self, part_moves, player)
+                
+        for move in part_moves:
+            if move in mill_moves
+                for enemy in enemies_to_take:
+                    moves.append(move[0],move[1],enemy)
+            else:
+                moves.append(move[0],move[1],'none')    
         
         
         
@@ -465,13 +474,61 @@ s
     """
     def get_legal_moves_2(self, color):
         
+        moves = []
+        
+        #get enemy pieces that can be taken if a mill is formed
+        enemies_outside_mills = get_pieces_outside_mills(self, -player)
+        if len(enemies_outside_mills) > 0:
+            enemies_to_take = enemies_outside_mills
+        else:
+            enemies_to_take = get_player_pieces(self, -player)
+            
+        #get the current players pieces that will be moved      
+        current_positions = get_player_pieces(self, player)
+        
+        #creating the first part of the moves
+        part_moves = []
+        
+        empty_locations = get_empty_positions(self)
+        
+        #pair the locations of current positions with all empty locations on the board
+        for position in current_positions:
+            for location in empty_locations:
+                part_moves.append(position, location)
+         
+        #finding the part moves that create mills, then pairing them accordingly with enemy pieces to beat
+        #get moves -> for each move_location, check if a mill is formed (check row(s))
+        mill_moves = get_possible_mills(self, part_moves, player)
+                
+        for move in part_moves:
+            if move in mill_moves
+                for enemy in enemies_to_take:
+                    moves.append(move[0],move[1],enemy)
+            else:
+                moves.append(move[0],move[1],'none')
+        
         return list(moves)
     
     
     def has_legal_moves(self, color):
         
-                        return True
-        return False
+        return (len(get_legal_moves(self, color)) > 0)
+    
+    
+    def execute_move(self, move, player):
+        if get_game_phase(self, player) == 0:
+            if player == 1:
+                remaining[1] -= 1
+            else:
+                remaining[0] -= 1
+        if move[0] != 'none':
+            self.pieces[move[0]] = 0
+        if move[2] != 'none':
+            self.pieces[move[2]] = 0
+            self.current_moves += 1
+        self.pieces[move[1]] = player
+        
+        
     
     
     
