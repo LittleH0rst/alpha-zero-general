@@ -16,6 +16,9 @@ Changes: JJ, July 07th, logic for legal moves, finished game logic for phase 0
 Changes: JJ, July 08th, logic for legal moves, adaption for mill check function
 
 Changes: JJ, July 10th, logic for legal moves, phases 1 and 2
+
+TODO: remaining RAUS und Counter für placements 
+IDEE: Zugriffsmethoden die den Array in 3 Arrays aufspalten -> Translation layer in 3 Arrays
 '''
 import numpy as np
 
@@ -55,11 +58,12 @@ class Board():
     def __init__(self, current_player = 1):
         "Set up initial board configuration."
         self.pieces = np.zeros((24), dtype='int')
-        self.remaining = (9,9)
+        self.count_placements = 0 #counter up until 18, then all pieces are placed
         self.current_moves = 0
         
     
     def get_all_moves(self):
+        
         
         """
         Move can be used in the same way as action.
@@ -74,11 +78,37 @@ class Board():
         
         
         return list(moves)
+    
+    """
+    returns a vector of length = actionsize marking all actions
+    that are allowed for the current board state in the all_moves list
+    with 1, all other moves with 0
+    """
+    def get_legal_move_vector(self, player):
+        
+        all_moves = get_all_moves(self)
+        
+        legal_moves = get_legal_moves(self, player)
+        legal_move_vector = np.zeros((len(all_moves), dtype='int'))
+                         
+        i = 0
+        n = 0
+        
+        while i < len(all_moves):
+       
+            if all_moves[i] == legal_moves[n]:
+                legal_move_vector[i] = 1
+                n += 1
+            
+            i += 1
+                                     
+        return legal_move_vector                             
         
         
     """
     Generates all moves for phase zero. 
     Should create 576 moves. Tested on July 4th.
+    24*24
     """
     def get_all_moves_phase_zero(self):
         
@@ -181,7 +211,7 @@ class Board():
         current_player = player
         if player == -1:
             current_player = 0
-        if remaining[current_player] >= 1: 
+        if count_placements < 18: 
             return 0
         elif count_player_pieces(self, player) <= 3:
             return 2
@@ -514,13 +544,18 @@ class Board():
         
         return (len(get_legal_moves(self, player)) > 0)
     
+    def get_board_rotations(self, pi):
+        
+        rot90_vector = [2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6]
+        
+        i = 0
+        for i < 24:
+            
+    
     
     def execute_move(self, move, player):
         if get_game_phase(self, player) == 0:
-            if player == 1:
-                remaining[1] -= 1
-            else:
-                remaining[0] -= 1
+            count_placements += 1
         if move[0] != 'none':
             self.pieces[move[0]] = 0
         if move[2] != 'none':

@@ -35,7 +35,7 @@ class NineMensMorrisGame(Game):
             (x,y): a tuple of board dimensions
         """
         # (a,b) tuple
-        return (3, 8)
+        return (1, 24)
 
     def getActionSize(self):
         """
@@ -143,12 +143,19 @@ class NineMensMorrisGame(Game):
         Input:
             board: current board
             pi: policy vector of size self.getActionSize()
+            
+            Rotate the Board with a rotation vector, that defines the index for
+            current value transformed to the rotated board.
 
         Returns:
             symmForms: a list of [(board,pi)] where each tuple is a symmetrical
                        form of the board and the corresponding pi vector. This
                        is used when training the neural network from examples.
         """
+        
+        
+        
+            
        
 
     def stringRepresentation(self, board):
