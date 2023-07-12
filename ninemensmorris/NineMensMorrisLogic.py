@@ -554,6 +554,7 @@ class Board():
     '''
     def get_board_rotations(self, pi):
         
+        rotation0 = []
         """
         logic for pi rotation phase one, reconstructed from the all_moves logic
         six times following pattern 
@@ -563,6 +564,32 @@ class Board():
         -> length of 600
         These patterns are repeated three times (for each ring)
         """
+        for ring in range(3): #3*(150+50) = 600
+            for i in range(6): #25*6 = 150
+                rotation0.append(50) #24+1 = 25
+                for t in range(3): #3*8 = 24
+                    for o in range(6): #appends 8
+                        rotation0.append(52)
+                        o+=1
+                    rotation0.append(44)
+                    rotation0.append(44)
+                    t+=1 
+            
+                i+=1
+            for j in range(2): #25*2 = 50
+                rotation0.append(-150) #24+1 = 25
+                for k in range(3): #3*8 = 24
+                    for l in range(6): #appends 8
+                        rotation0.append(-148)
+                        l+=1
+                    rotation0.append(-156)
+                    rotation0.append(-156)
+                    
+                    k+=1
+                j+=1
+                        
+            ring+=1    
+
         
         
         """
@@ -596,12 +623,71 @@ class Board():
         )
         )
         )
-        
-        
         """
+        rotation12= []
+        for a in range(3): #3*(2700+1200) = 14400
+            for b in range(6): #6*450 = 2700
+                for c in range(3): #150*3 = 450
+                    for d in range(6): #150
+                        rotation12.append(1200) #25
+                        for e in range(3): #24
+                            for f in range(6): #8
+                                rotation12.append(1202)
+                                f+=1
+                            rotation12.append(1194)
+                            rotation12.append(1194)
+                            e+=1
+                        d+=1
+                    for g in range(2): #50
+                        rotation12.append(1025) #25
+                        for h in range(3): #24
+                            for i in range(6): #8
+                                rotation12.append(1027)
+                                i+=1
+                            rotation12.append(1019)
+                            rotation12.append(1019)
+                            h+=1
+                        g+=1
+                    c+=1
+                b+=1
+            for j in range(2): #600 * 2 = 1200
+                for k in range(3): #200 * 3 = 600
+                    for l in range(6): #150
+                        rotation12.append(-3425) #25
+                        for m in range(3): #24
+                            for n in range(6): #8
+                                rotation12.append(-3423)
+                                n+=1
+                            rotation12.append(-3431)
+                            rotation12.append(-3431)
+                            m+=1
+                        l+=1
+                    for o in range(2): #50
+                        rotation12.append(-3600) #25
+                        for p in range(3): #24
+                            for q in range(6): #8
+                                rotation 12.append(-3598)
+                                q+=1
+                            rotation12.append(-3606)
+                            rotation12.append(-3606)
+                            p+=1
+                        o+=1
+                    k+=1
+                j+=1
+            a+=1
+                    
+                            
+                    
+                            
+                            
+        rot90_policy_vector = rotation0 + rotation12                
         
         rot90_vector = [2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6]
         
+        newboard = np.zeros((24), dtype='int')
+        newpi = np.zeros((15000), dtype='int')
+        
+        #rotate board for 90
         i = 0
         for i < 24:
             
