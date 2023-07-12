@@ -213,7 +213,7 @@ class Board():
             current_player = 0
         if count_placements < 18: 
             return 0
-        elif count_player_pieces(self, player) <= 3:
+        elif len(get_player_pieces(self, player)) <= 3:
             return 2
         else:
             return 1
@@ -544,7 +544,61 @@ class Board():
         
         return (len(get_legal_moves(self, player)) > 0)
     
+    '''
+    rotates the board three times, each time creating a pair of the rotated
+    board and the rotated policy array
+    IDEA one: Reconstruct the current player through the policy array pi and
+    regenerate a the array through all the legal moves for the board state
+    IDEA two: Find rules to create a rotation vector to swap the positions in
+    the right way
+    '''
     def get_board_rotations(self, pi):
+        
+        """
+        logic for pi rotation phase one, reconstructed from the all_moves logic
+        six times following pattern 
+        1x 50, 3x (6x 52, 2x 44)
+        and two times following pattern 
+        1x -150, 3x (6x -148, 2x -156)
+        -> length of 600
+        These patterns are repeated three times (for each ring)
+        """
+        
+        
+        """
+        logic for pi rotation phase one and two, reconstructed from the all_moves
+        logic has one more layer of complexity
+        
+        The rotational vector follows the pattern:
+        
+        
+        (0-5,0-5,0-23)
+        (1x 1200, 3x(6x 1202, 2x 1194))
+        (0-5,6-7,0-23)
+        (1x 1025, 3x(6x 1027, 2x 1019))
+        
+        (6-7,0-5,0-23)
+        (1x -3425, 3x(6x -3423, 2x -3431))
+        (6-7,6-7,0-23)
+        (1x -3600, 3x(6x -3598, 2x -3606))
+        
+        3x(
+        6x(
+        3x(
+        6x(1x 1200, 3x(6x 1202, 2x 1194))
+        2x(1x 1025, 3x(6x 1027, 2x 1019))
+        )
+        )
+        2x(
+        3x(
+        6x(1x -3425, 3x(6x -3423, 2x -3431))
+        2x(1x -3600, 3x(6x -3598, 2x -3606))
+        )
+        )
+        )
+        
+        
+        """
         
         rot90_vector = [2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6]
         

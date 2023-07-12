@@ -117,9 +117,12 @@ class NineMensMorrisGame(Game):
             return 0
         if b.has_legal_moves(-player):
             return 0
-        if b.countDiff(player) > 0:
-            return 1
-        return -1
+        if len(b.get_player_pieces(player)) < 3:
+            return -player
+        if len(b.get_player_pieces(-player)) < 3:
+            return player
+        if b.current_moves >= b.MAX_MOVES_WITHOUT_MILL:
+            return 0.1
 
     def getCanonicalForm(self, board, player):
         """
