@@ -17,6 +17,10 @@ Changes: JJ, July 08th, logic for legal moves, adaption for mill check function
 
 Changes: JJ, July 10th, logic for legal moves, phases 1 and 2
 
+Changes: JJ RZ, July 11th, get legal move vector and started rotation logic
+
+Changes: JJ, July 12th, generate rotation array for policy vector
+
 TODO: remaining RAUS und Counter für placements 
 IDEE: Zugriffsmethoden die den Array in 3 Arrays aufspalten -> Translation layer in 3 Arrays
 '''
@@ -552,7 +556,7 @@ class Board():
     IDEA two: Find rules to create a rotation vector to swap the positions in
     the right way
     '''
-    def get_board_rotations(self, pi):
+    def get_board_rotations(self, board, pi):
         
         rotation0 = []
         """
@@ -666,7 +670,7 @@ class Board():
                         rotation12.append(-3600) #25
                         for p in range(3): #24
                             for q in range(6): #8
-                                rotation 12.append(-3598)
+                                rotation12.append(-3598)
                                 q+=1
                             rotation12.append(-3606)
                             rotation12.append(-3606)
@@ -676,7 +680,8 @@ class Board():
                 j+=1
             a+=1
                     
-                            
+        
+        
                     
                             
                             
@@ -684,13 +689,66 @@ class Board():
         
         rot90_vector = [2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6]
         
-        newboard = np.zeros((24), dtype='int')
-        newpi = np.zeros((15000), dtype='int')
+        newboard = [0] * 24
+        newpi = [0] 15000
+        rotations90 = [-1] * 15000
         
-        #rotate board for 90
+        allmoves = self.get_all_moves()
+        
+        i = 0
+        while i < 15000:
+            
+            move = allmoves[i]
+            rotated_move = rotate(move)
+            newindex = allmoves.index(rotatedmove)
+            rotations90[i] = newindex
+        
+        
+        
+        #rotate board by 90 degrees
         i = 0
         for i < 24:
+            self.pieces
             
+            
+    """
+    takes a move tuple as input, rotates it by 90 degrees and returns the rotated move
+    """
+    def rotate(move):
+        neworigin
+        newdestination
+        newenemy
+        
+        if move[0] == 'none':
+            neworigin = 'none'
+
+        elif move[0] in [6,7,14,15,22,23]:
+            neworigin = move[0] - 6
+
+        else:
+            neworigin = move[0] + 2
+
+        if move[1] in [6,7,14,15,22,23]:
+            newdestination = move[1] - 6
+
+        else:
+            newdestination = move[1] + 2
+        
+        if move[2] == 'none':
+            newenemy = 'none'
+
+        elif move[2] in [6,7,14,15,22,23]:
+            newenemy = move[2] - 6
+
+        else:
+            newenemy = move[2] + 2
+        
+        return (neworigin, newdestination, newenemy)
+        
+        
+                
+                
+                
     
     
     def execute_move(self, move, player):

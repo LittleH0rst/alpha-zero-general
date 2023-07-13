@@ -35,7 +35,7 @@ class NineMensMorrisGame(Game):
             (x,y): a tuple of board dimensions
         """
         # (a,b) tuple
-        return (1, 24)
+        return (24, 1)
 
     def getActionSize(self):
         """
