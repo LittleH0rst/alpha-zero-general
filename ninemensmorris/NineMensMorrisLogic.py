@@ -21,6 +21,8 @@ Changes: JJ RZ, July 11th, get legal move vector and started rotation logic
 
 Changes: JJ, July 12th, generate rotation array for policy vector
 
+Changes: JJ, July 15th, small tweaks
+
 TODO: remaining RAUS und Counter für placements 
 IDEE: Zugriffsmethoden die den Array in 3 Arrays aufspalten -> Translation layer in 3 Arrays
 '''
