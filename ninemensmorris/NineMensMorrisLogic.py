@@ -23,10 +23,9 @@ Changes: JJ, July 12th, generate rotation array for policy vector
 
 Changes: JJ, July 15th, small tweaks
 
-TODO: remaining RAUS und Counter für placements 
-IDEE: Zugriffsmethoden die den Array in 3 Arrays aufspalten -> Translation layer in 3 Arrays
+TODO: remaining RAUS und Counter für placements
 '''
-import numpy as np
+import copy
 
 class Board():
     
@@ -63,9 +62,11 @@ class Board():
 
     def __init__(self, current_player = 1):
         "Set up initial board configuration."
-        self.pieces = np.zeros((24), dtype='int')
+        self.pieces = [0] * 24
         self.count_placements = 0 #counter up until 18, then all pieces are placed
         self.current_moves = 0
+        self.policy_rotation_vector = self.get_policy_rotation90()
+        self.all_moves = self.get_all_moves()
         
     
     def get_all_moves(self):
@@ -92,15 +93,14 @@ class Board():
     """
     def get_legal_move_vector(self, player):
         
-        all_moves = get_all_moves(self)
-        
+       
         legal_moves = get_legal_moves(self, player)
-        legal_move_vector = np.zeros((len(all_moves), dtype='int'))
+        legal_move_vector = [] * len(self.all_moves)
                          
         i = 0
         n = 0
         
-        while i < len(all_moves):
+        while i < len(self.all_moves):
        
             if all_moves[i] == legal_moves[n]:
                 legal_move_vector[i] = 1
@@ -215,8 +215,6 @@ class Board():
     def get_game_phase(self, player):
         
         current_player = player
-        if player == -1:
-            current_player = 0
         if count_placements < 18: 
             return 0
         elif len(get_player_pieces(self, player)) <= 3:
@@ -309,7 +307,7 @@ class Board():
                     elif move[1] in [9,11,13,15]: #middle ring
                         if move[1] == 15:
                             if (self.pieces[move[1] - 7] == player and self.pieces[move[1] - 1] == player and
-                               and move[1] - 7 != move[0] and move[1] - 1 != move[0]): #check ring
+                               move[1] - 7 != move[0] and move[1] - 1 != move[0]): #check ring
                                 move_forms_mill.append(move)
                         else: 
                             if (self.pieces[move[1] - 1] == player and self.pieces[move[1] + 1] == player and
@@ -369,7 +367,7 @@ class Board():
                 if position % 2 == 0: #position is in a corner
                     
                     if position % 8 == 0: # position is in the top left corner of a ring
-                        return (positon + 1, position + 7)
+                        return (position + 1, position + 7)
                     
                     else: #position is in top right, or bottom corners
                         return (position - 1, position + 1)
@@ -395,7 +393,7 @@ class Board():
                             return (position - 8, position - 1, position + 1) 
                     
         
-        return
+        return 
     
     """
     Looks at the board, given the current player and returns a list
@@ -435,7 +433,7 @@ class Board():
         
         
         #get empty positions, they represent all possible move locations for phase zero
-        empty_locations []
+        empty_locations = []
         for position in get_empty_positions(self):
             empty_locations.append(('none',position))
         
@@ -447,7 +445,7 @@ class Board():
         moves = []
         
         for move in empty_locations:
-            if move in mill_moves
+            if move in mill_moves:
                 for enemy in enemies_to_take:
                     moves.append('none',move[1],enemy)
             else:
@@ -482,7 +480,7 @@ class Board():
         for position in current_positions:
             neighbours = get_neighbours(self, position)
             index = 0
-            for index < len(neighbours):
+            while index < len(neighbours):
                 if self.pieces[neighbours[index]] == 0:
                     part_moves.append(position, neighbours[index])
                 index += 1
@@ -492,7 +490,7 @@ class Board():
         mill_moves = get_possible_mills(self, part_moves, player)
                 
         for move in part_moves:
-            if move in mill_moves
+            if move in mill_moves:
                 for enemy in enemies_to_take:
                     moves.append(move[0],move[1],enemy)
             else:
@@ -537,7 +535,7 @@ class Board():
         mill_moves = get_possible_mills(self, part_moves, player)
                 
         for move in part_moves:
-            if move in mill_moves
+            if move in mill_moves:
                 for enemy in enemies_to_take:
                     moves.append(move[0],move[1],enemy)
             else:
@@ -548,7 +546,7 @@ class Board():
     
     def has_legal_moves(self, player):
         
-        return (len(get_legal_moves(self, player)) > 0)
+        return (len(self.get_legal_moves(player)) > 0)
     
     '''
     rotates the board three times, each time creating a pair of the rotated
@@ -557,160 +555,64 @@ class Board():
     regenerate a the array through all the legal moves for the board state
     IDEA two: Find rules to create a rotation vector to swap the positions in
     the right way
+    NEW IDEA: Use simple Vector addition for the board rotations, but generate
+    a lookup vektor for the policy vector, by generating all moves
     '''
-    def get_board_rotations(self, board, pi):
+    def get_board_rotations(self, board, pi):               
         
-        rotation0 = []
-        """
-        logic for pi rotation phase one, reconstructed from the all_moves logic
-        six times following pattern 
-        1x 50, 3x (6x 52, 2x 44)
-        and two times following pattern 
-        1x -150, 3x (6x -148, 2x -156)
-        -> length of 600
-        These patterns are repeated three times (for each ring)
-        """
-        for ring in range(3): #3*(150+50) = 600
-            for i in range(6): #25*6 = 150
-                rotation0.append(50) #24+1 = 25
-                for t in range(3): #3*8 = 24
-                    for o in range(6): #appends 8
-                        rotation0.append(52)
-                        o+=1
-                    rotation0.append(44)
-                    rotation0.append(44)
-                    t+=1 
-            
-                i+=1
-            for j in range(2): #25*2 = 50
-                rotation0.append(-150) #24+1 = 25
-                for k in range(3): #3*8 = 24
-                    for l in range(6): #appends 8
-                        rotation0.append(-148)
-                        l+=1
-                    rotation0.append(-156)
-                    rotation0.append(-156)
-                    
-                    k+=1
-                j+=1
-                        
-            ring+=1    
-
-        
-        
-        """
-        logic for pi rotation phase one and two, reconstructed from the all_moves
-        logic has one more layer of complexity
-        
-        The rotational vector follows the pattern:
-        
-        
-        (0-5,0-5,0-23)
-        (1x 1200, 3x(6x 1202, 2x 1194))
-        (0-5,6-7,0-23)
-        (1x 1025, 3x(6x 1027, 2x 1019))
-        
-        (6-7,0-5,0-23)
-        (1x -3425, 3x(6x -3423, 2x -3431))
-        (6-7,6-7,0-23)
-        (1x -3600, 3x(6x -3598, 2x -3606))
-        
-        3x(
-        6x(
-        3x(
-        6x(1x 1200, 3x(6x 1202, 2x 1194))
-        2x(1x 1025, 3x(6x 1027, 2x 1019))
-        )
-        )
-        2x(
-        3x(
-        6x(1x -3425, 3x(6x -3423, 2x -3431))
-        2x(1x -3600, 3x(6x -3598, 2x -3606))
-        )
-        )
-        )
-        """
-        rotation12= []
-        for a in range(3): #3*(2700+1200) = 14400
-            for b in range(6): #6*450 = 2700
-                for c in range(3): #150*3 = 450
-                    for d in range(6): #150
-                        rotation12.append(1200) #25
-                        for e in range(3): #24
-                            for f in range(6): #8
-                                rotation12.append(1202)
-                                f+=1
-                            rotation12.append(1194)
-                            rotation12.append(1194)
-                            e+=1
-                        d+=1
-                    for g in range(2): #50
-                        rotation12.append(1025) #25
-                        for h in range(3): #24
-                            for i in range(6): #8
-                                rotation12.append(1027)
-                                i+=1
-                            rotation12.append(1019)
-                            rotation12.append(1019)
-                            h+=1
-                        g+=1
-                    c+=1
-                b+=1
-            for j in range(2): #600 * 2 = 1200
-                for k in range(3): #200 * 3 = 600
-                    for l in range(6): #150
-                        rotation12.append(-3425) #25
-                        for m in range(3): #24
-                            for n in range(6): #8
-                                rotation12.append(-3423)
-                                n+=1
-                            rotation12.append(-3431)
-                            rotation12.append(-3431)
-                            m+=1
-                        l+=1
-                    for o in range(2): #50
-                        rotation12.append(-3600) #25
-                        for p in range(3): #24
-                            for q in range(6): #8
-                                rotation12.append(-3598)
-                                q+=1
-                            rotation12.append(-3606)
-                            rotation12.append(-3606)
-                            p+=1
-                        o+=1
-                    k+=1
-                j+=1
-            a+=1
-                    
-        
-        
-                    
-                            
-                            
-        rot90_policy_vector = rotation0 + rotation12                
-        
+        #vector to rotate the board 90 degrees -> move each ring by two positions
         rot90_vector = [2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6]
         
-        newboard = [0] * 24
-        newpi = [0] 15000
-        rotations90 = [-1] * 15000
+        new_board = [0] * 24
         
-        allmoves = self.get_all_moves()
+        rotated_results = []
         
-        i = 0
-        while i < 15000:
+        #rotates the board 3 times
+        for i in range(3):
+            index = 0
+            while index < 24:
+                new_board[i+rot90_vector[i]]=board[i]
+                index+=1
+                
+            board = copy.deepcopy(new_board)
             
-            move = allmoves[i]
-            rotated_move = rotate(move)
-            newindex = allmoves.index(rotatedmove)
-            rotations90[i] = newindex
+            index = 0
+            while index < self.len(all_moves):
+                new_pi[self.policy_rotation_vector[i]] = pi[i]
+                index += 1
+                
+            pi = copy.deepcopy(new_pi)
+            
+            rotated_results.append((board,pi))
+            
+            i+=1
+   
+        return rotated_results
         
-        
-        
-        #rotate board by 90 degrees
+ 
+    
+    """
+    generates the rotation vector for the policy vector
+    the method is called in the constructor, the rotation
+    vector is only called once
+    """
+    def get_policy_roation90(self):
+    
+        allmoves = self.get_all_moves()
+        rotation90 = [-1] * len(allmoves)
+
         i = 0
-        for i < 24:
-            self.pieces
+        while i < len(allmoves):
+  
+            move = allmoves[i]
+            rotatedmove = rotate(move)
+            newindex = allmoves.index(rotatedmove)
+            rotation90[i] = newindex
+
+            i+=1
+        
+        return roation90
+            
             
             
     """
@@ -747,13 +649,9 @@ class Board():
         
         return (neworigin, newdestination, newenemy)
         
-        
-                
-                
-                
+
     
-    
-    def execute_move(self, move, player):
+    def execute_move(self, board, player, move):
         if get_game_phase(self, player) == 0:
             count_placements += 1
         if move[0] != 'none':

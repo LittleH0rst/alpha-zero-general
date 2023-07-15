@@ -6,15 +6,6 @@ from .NineMensMorrisLogic import Board
 import numpy as np
 
 class NineMensMorrisGame(Game):
-    point_content = {
-        -1: "B",
-        +0: "-",
-        +1: "W"
-    }
-
-    @staticmethod
-    def getSquarePiece(piece):
-        return NineMensMorrisGame.point_content[piece]
 
     def __init__(self, n):
         self.n = n
@@ -25,7 +16,7 @@ class NineMensMorrisGame(Game):
             startBoard: a representation of the board (ideally this is the form
                         that will be the input to your neural network)
         """
-        # return initial board (numpy board)
+        # return initial board
         b = Board(self.n)
         return np.array(b.pieces)
 
@@ -46,15 +37,17 @@ class NineMensMorrisGame(Game):
         be placed anywhere on the map, makes 24 actions per piece. If a mill 
         is formed, with that move, the acting player gets to remove a piece 
         from the oppenent. That makes 48 actions per piece in total.
-        24*24 -> Actions in Phase 0 (24 positions to place, 23 positions to take or none (+1)
-        24*23*23 -> Actions in Phases 1 and 2 (24 possible origins, 23 positions to move to, 
+        24*24 -> Actions in Phase 0 (24 positions to place, 23 positions to 
+        take or none (+1)
+        24*23*23 -> Actions in Phases 1 and 2 (24 possible origins, 23 
+        positions to move to, 
         22 pieces to take  or none (+1)
         The result in total should come to 576 + 12696 = 13272
         """
         # return number of actions
         return len(b.get_all_moves())
 
-    def getNextState(self, board, player, action):
+    def getNextState(self, board, player, move):
         """
         Input:
             board: current board
