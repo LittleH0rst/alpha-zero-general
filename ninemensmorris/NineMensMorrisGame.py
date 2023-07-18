@@ -1,8 +1,9 @@
 from __future__ import print_function
 import sys
 sys.path.append('..')
+from Game import Game
+from .NineMensMorrisLogic import Board
 import numpy as np
-import copy
 
 class NineMensMorrisGame(Game):
     square_content = {

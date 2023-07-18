@@ -28,6 +28,7 @@ Changes: JJ, July 16th, a lot of testing, reorganizing board structure and more
 TODO: remaining RAUS und Counter für placements
 '''
 import copy
+import numpy as np
 
 class Board():
 
@@ -107,16 +108,17 @@ class Board():
         board_image = np.zeros((5,5), dtype=int)
         boardx = 0
         boardy = 0
+        
         for piece in array:
 
-          board_image[boardx][boardy] = copy.deepcopy(piece)
+          board_image[boardx][boardy] = piece
           if boardy == 4:
             boardx += 1
             boardy = 0
           else:
             boardy += 1
 
-        board_image[4][4] = copy.deepcopy(count_placements)
+        board_image[4][4] = count_placements
 
         return board_image
 
@@ -128,7 +130,7 @@ class Board():
         index = 0
         while index < len(re_board):
 
-          re_board[index] = copy.deepcopy(self.pieces[image_x][image_y])
+          re_board[index] = self.pieces[image_x][image_y]
           if image_y == 4:
             image_x += 1
             image_y = 0
@@ -136,7 +138,7 @@ class Board():
             image_y += 1
           index += 1
 
-        count_placements = copy.deepcopy(self.pieces[4][4])
+        count_placements = self.pieces[4][4]
 
         return (re_board, count_placements)
 
