@@ -23,171 +23,132 @@ Changes: JJ, July 12th, generate rotation array for policy vector
 
 Changes: JJ, July 15th, small tweaks
 
+Changes: JJ, July 16th, a lot of testing, reorganizing board structure and more
+
 TODO: remaining RAUS und Counter für placements
 '''
 import copy
 
 class Board():
-    
+
     """
     A Ninemensmorris Board is represented as a array of (25)
     The item on board[24] represents the placing phase. "0" if
     the phase is not over yet, "1" if it is.
-    
+
     Board logic:
-    
+
     The pieces are represented as
-    - 1 for player one (black), 1 for player 2 (white) and 0 if there is no 
-    piece on the position (for the canonical Board the 
-    current players pieces are always shown as 1 and the 
+    - 1 for player one (black), 1 for player 2 (white) and 0 if there is no
+    piece on the position (for the canonical Board the
+    current players pieces are always shown as 1 and the
     opponents as -1). The initial board:
-    
+
         board shape:
         [0,0,0,0,0,0,0,0,    -> outer ring
         0,0,0,0,0,0,0,0,     -> middle ring
         0,0,0,0,0,0,0,0]     -> inner ring
-   
-    
-        
+
+
+
     Locations:
-    
+
     Locations are given as the index in the board array.
-    
+
     Actions:
-    
+
     Actions are stored in a list of tuples of the form:
         action = [piece_location, move_location, remove_piece]
-    """   
-    MAX_MOVES_WITHOUT_MILL = 60
+    """
 
-    def __init__(self, current_player = 1):
+    """
+    5x5 configuration, 24 spots for pieces, one for countplacements
+    """
+    def __init__(self):
         "Set up initial board configuration."
-        self.pieces = [0] * 24
-        self.count_placements = 0 #counter up until 18, then all pieces are placed
-        self.current_moves = 0
-        self.policy_rotation_vector = self.get_policy_rotation90()
-        self.all_moves = self.get_all_moves()
-        
-    
-    def get_all_moves(self):
-        
-        
-        """
-        Move can be used in the same way as action.
-        We need to consider different cases:
-        For game Phase 0, the piece_location doesnt exist,
-        because a new piece is placed on the board.
-        If one of the items in the action tuple doesnt exist
-        for a action, we put a string "none".
-        
-        """
-        moves = get_all_moves_phase_zero(self) + get_all_moves_phase_one_and_two(self)
-        
-        
-        return list(moves)
-    
+        self.n = 5
+        self.pieces = [None]*self.n
+        for i in range(self.n):
+            self.pieces[i] = [0]*self.n
+
+    def __getitem__(self, index):
+      return self.pieces[index]
+
+
     """
     returns a vector of length = actionsize marking all actions
     that are allowed for the current board state in the all_moves list
     with 1, all other moves with 0
     """
-    def get_legal_move_vector(self, player):
-        
-       
-        legal_moves = get_legal_moves(self, player)
-        legal_move_vector = [] * len(self.all_moves)
-                         
-        i = 0
-        n = 0
-        
-        while i < len(self.all_moves):
-       
-            if all_moves[i] == legal_moves[n]:
-                legal_move_vector[i] = 1
-                n += 1
-            
-            i += 1
-                                     
-        return legal_move_vector                             
-        
-        
-    """
-    Generates all moves for phase zero. 
-    Should create 576 moves. Tested on July 4th.
-    24*24
-    """
-    def get_all_moves_phase_zero(self):
-        
-        moves = []
-        index = 0
-        
-        while index < 24:
-            
-            moves.append(("none",index,"none"))
-            count = 0
-            
-            while count < 24:
-                
-                if count != index:
-                    
-                    moves.append(("none",index,count))
-                    
-                count += 1    
-            
-            index += 1
-            
-        return list(moves)
-    
-    """
-    Generates all moves for phase one and two.
-    The difference, compared to phase zero, is that
-    each move has a piece that is moved to another
-    location. The rest remains the same.
-    Should create 12696 moves (24*23*23). Tested on July 4th
-    """
-    def get_all_moves_phase_one_and_two(self):
-        
-        moves = []
-        index_origin = 0
-        
-        while index_origin < 24:
-            
-            index_move = 0
-            
-            while index_move < 24:
-                
-                if index_move != index_origin:
-                    
-                    moves.append((index_origin,index_move,"none"))
-                    
-                    count = 0
-                    
-                    while count <24:
-                        
-                        if (count != index_move)and(count != index_origin):
-                            
-                            moves.append((index_origin,index_move,count))
-                            
-                        count += 1
-                        
-                index_move += 1
-                            
-            index_origin += 1
-        
-        return list(moves)
+    def get_legal_move_vector(self, player, all_moves):
 
-    
-    
-    
+
+        legal_moves = self.get_legal_moves(player)
+        legal_move_vector = [0] * len(all_moves)
+
+        #i = 0
+        #n = 0
+
+        #while i < len(all_moves) and n < len(legal_moves):
+
+        #    if all_moves[i] == legal_moves[n]:
+        #        legal_move_vector[i] = 1
+        #        n += 1
+
+        #    i += 1
+
+        for move in legal_moves:
+          index = all_moves.index(move)
+          legal_move_vector[index] = 1
+        return legal_move_vector
+
+    def arrayToImage(self, array, count_placements):
+
+        board_image = np.zeros((5,5), dtype=int)
+        boardx = 0
+        boardy = 0
+        for piece in array:
+
+          board_image[boardx][boardy] = copy.deepcopy(piece)
+          if boardy == 4:
+            boardx += 1
+            boardy = 0
+          else:
+            boardy += 1
+
+        board_image[4][4] = copy.deepcopy(count_placements)
+
+        return board_image
+
+    def piecesToArray(self):
+
+        re_board = np.zeros(24)
+        image_x = 0
+        image_y = 0
+        index = 0
+        while index < len(re_board):
+
+          re_board[index] = copy.deepcopy(self.pieces[image_x][image_y])
+          if image_y == 4:
+            image_x += 1
+            image_y = 0
+          else:
+            image_y += 1
+          index += 1
+
+        count_placements = copy.deepcopy(self.pieces[4][4])
+
+        return (re_board, count_placements)
+
     """
     Input: board object, color
-    
+
     IDEA: Generate Move Tuples from the Board state
     -> first implement Phase 0 (easier)
-    
+
     TO IMPLEMENT
     - Find Game Phase for given color
-    
+
     Phase 0
     - check if there is a possible mill (2 in a row, last empty)
     - flag the possible mills
@@ -198,356 +159,374 @@ class Board():
         """Returns all the legal moves for the given color.
         (1 for white, -1 for black)
         """
-        game_phase = get_game_phase(self, player)
-       
+        game_phase = self.get_game_phase(player)
+
         if game_phase == 0:
-            return list(get_legal_moves_0(self, player))
-            
+            return list(self.get_legal_moves_0(player))
+
         elif game_phase == 1:
-            return list(get_legal_moves_1(self, player))
+            return list(self.get_legal_moves_1(player))
         elif game_phase == 2:
-            return list(get_legal_moves_2(self, player))
-    
+            return list(self.get_legal_moves_2(player))
+
     """
     Looks at the board, given the current player and identifies the
     phase of the game for the player.
     """
     def get_game_phase(self, player):
-        
-        current_player = player
-        if count_placements < 18: 
+
+        array = self.piecesToArray()
+
+        if array[1] < 18:
             return 0
-        elif len(get_player_pieces(self, player)) <= 3:
+        elif len(self.get_player_pieces(player)) <= 3:
             return 2
         else:
             return 1
-    
+
     """
-    looks at the board, given the current player and returns the 
-    locations of the players pieces in a list. 
+    looks at the board, given the current player and returns the
+    locations of the players pieces in a list.
     """
     def get_player_pieces(self, player):
-        
+
+        array = self.piecesToArray()
+        board = array[0]
         locations = []
-        
+
         index = 0
-        while index < len(self.pieces):
-            if self.pieces[index] == player:
+        while index < len(board):
+            if board[index] == player:
                 locations.append(index)
             index += 1
-            
-        return list(locations)    
-        
+        if locations == []:
+          return []
+        else:
+          return list(locations)
+
     """
     looks at the board and returns the indices for all empty
     positions in a list.
     """
     def get_empty_positions(self):
-        
+
+        array = self.piecesToArray()
+        board = array[0]
+
         locations = []
-        
+
         index = 0
-        while index < len(self.pieces):
-            if self.pieces[index] == 0:
+        while index < len(board):
+            if board[index] == 0:
                 locations.append(index)
             index += 1
-            
+
         return list(locations)
-    
+
     """
     identifies possible mills, checking if any of the moves on the current board would
     form a mill (results in a different marking for the list of all moves)
-    move_locations => Array of Tuples (origin, move) 
+    move_locations => Array of Tuples (origin, move)
     Each check makes sure, that the origin of the move, isnt one of the pieces in the
     potentially new mill
     """
     def get_possible_mills(self, move_locations, player):
-        
+
+        array = self.piecesToArray()
+        board = array[0]
         move_forms_mill = []
-        
+
         for move in move_locations:
-            if move != None:
-                if move[1] % 2 == 0: #move is in a corner
-                    if move[1] % 8 == 0: # move is in the top left corner of a ring
-                        if (self.pieces[move[1] + 7] == player and self.pieces[move[1] + 6] == player and 
-                           move[1] + 7 != move[0] and move[1] + 6 != move[0]): #check down
+            if (move != None) and (move[1] < 24) and (move[1] >= 0) :
+                if (move[1] % 2) == 0: #move is in a corner
+                    if (move[1] % 8) == 0: # move is in the top left corner of a ring
+                        if (([move[1] + 7] == player) and (board[move[1] + 6] == player) and
+                           (move[1] + 7 != move[0]) and (move[1] + 6 != move[0])): #check down
                             move_forms_mill.append(move)
-                        if (self.pieces[move[1] + 1] == player and self.pieces[move[1] + 2] == player and
-                           move[1] + 1 != move[0] and move[1] + 2 != move[0]): #check right
+                        if ((board[move[1] + 1] == player) and (board[move[1] + 2] == player) and
+                           (move[1] + 1 != move[0]) and (move[1] + 2 != move[0])): #check right
                             move_forms_mill.append(move)
                     elif move in [6,14,22]: #move is in the bottom left corner of a ring
-                        if (self.pieces[move[1] + 1] == player and self.pieces[move[1] - 6] == player and 
-                           move[1] + 1 != move[0] and move[1] - 6 != move[0]): #check up
+                        if ((board[move[1] + 1] == player) and (board[move[1] - 6] == player) and
+                           (move[1] + 1 != move[0])and (move[1] - 6 != move[0])): #check up
                             move_forms_mill.append(move)
-                        if (self.pieces[move[1] - 1] == player and self.pieces[move[1] - 2] == player and
-                           move[1] - 1 != move[0] and move[1] - 2 != move[0]): #check right
+                        if ((board[move[1] - 1] == player) and (board[move[1] - 2] == player) and
+                           (move[1] - 1 != move[0]) and (move[1] - 2 != move[0])): #check right
                             move_forms_mill.append(move)
-                    else: #move is in the bottom or top right corner of a ring
-                        if (self.pieces[move[1] + 1] == player and self.pieces[move[1] + 2] == player and
-                           move[1] + 1 != move[0] and move[1] + 2 != move[0]): #check down/ left
+                    elif move in [2,10,18,4,12,20]: #move is in the bottom or top right corner of a ring
+                        if ((board[move[1] + 1] == player) and (board[move[1] + 2] == player) and
+                           (move[1] + 1 != move[0]) and (move[1] + 2 != move[0])): #check down/ left
                             move_forms_mill.append(move)
-                        if (self.pieces[move[1] - 1] == player and self.pieces[move[1] - 2] == player and
-                           move[1] - 1 != move[0] and move[1] - 2 != move[0]): #check left/ up
+                        if ((board[move[1] - 1] == player) and (board[move[1] - 2] == player) and
+                           (move[1] - 1 != move[0]) and (move[1] - 2 != move[0])): #check left/ up
                             move_forms_mill.append(move)
-                
+
                 else: #move is in the middle of a row
                     if move[1] in [1,3,5,7]: #outer ring
                         if move[1] == 7:
-                            if (self.pieces[move[1] - 7] == player and self.pieces[move[1] - 1] == player and
-                               move[1] - 7 != move[0] and move[1] - 1 != move[0]): #check ring
+                            if ((board[move[1] - 7] == player) and (board[move[1] - 1] == player) and
+                               (move[1] - 7 != move[0]) and (move[1] - 1 != move[0])): #check ring
                                 move_forms_mill.append(move)
                         else:
-                            if (self.pieces[move[1] - 1] == player and self.pieces[move[1] + 1] == player and
-                               move[1] - 1 != move[0] and move[1] + 1 != move[0]): #check ring
+                            if ((board[move[1] - 1] == player) and (board[move[1] + 1] == player) and
+                               (move[1] - 1 != move[0]) and (move[1] + 1 != move[0])): #check ring
                                 move_forms_mill.append(move)
-                        if (self.pieces[move[1] + 8] == player and self.pieces[move[1] + 16] == player and
-                           move[1] + 8 != move[0] and move[1] + 16 != move[0]): #check intersections
+                        if ((board[move[1] + 8] == player) and (board[move[1] + 16] == player) and
+                           (move[1] + 8 != move[0]) and (move[1] + 16 != move[0])): #check intersections
                                 move_forms_mill.append(move)
-                                
+
                     elif move[1] in [9,11,13,15]: #middle ring
                         if move[1] == 15:
-                            if (self.pieces[move[1] - 7] == player and self.pieces[move[1] - 1] == player and
-                               move[1] - 7 != move[0] and move[1] - 1 != move[0]): #check ring
+                            if ((board[move[1] - 7] == player) and (board[move[1] - 1] == player) and
+                               (move[1] - 7 != move[0]) and (move[1] - 1 != move[0])): #check ring
                                 move_forms_mill.append(move)
-                        else: 
-                            if (self.pieces[move[1] - 1] == player and self.pieces[move[1] + 1] == player and
-                               move[1] - 1 != move[0] and move[1] + 1 != move[0]): #check ring
+                        else:
+                            if ((board[move[1] - 1] == player) and (board[move[1] + 1] == player) and
+                               (move[1] - 1 != move[0]) and (move[1] + 1 != move[0])): #check ring
                                 move_forms_mill.append(move)
-                        if (self.pieces[move[1] + 8] == player and self.pieces[move[1] - 8] == player and
-                           move[1] + 8 != move[0] and move[1] - 8 != move[0]): #check intersections
+                        if ((board[move[1] + 8] == player) and (board[move[1] - 8] == player) and
+                           (move[1] + 8 != move[0]) and (move[1] - 8 != move[0])): #check intersections
                                 move_forms_mill.append(move)
-                       
+
                     elif move[1] in [17,19,21,23]: #inner ring
                         if move[1] == 23:
-                            if (self.pieces[move[1] - 7] == player and self.pieces[move[1] - 1] == player and
-                               move[1] - 7 != move[0] and move[1] - 1 != move[0]): #check ring
+                            if ((board[move[1] - 7] == player) and (board[move[1] - 1] == player) and
+                               (move[1] - 7 != move[0]) and (move[1] - 1 != move[0])): #check ring
                                 move_forms_mill.append(move)
-                        else: 
-                            if (self.pieces[move[1] - 1] == player and self.pieces[move[1] + 1] == player and
-                               move[1] - 1 != move[0] and move[1] + 1 != move[0]): #check ring
+                        else:
+                            if ((board[move[1] - 1] == player) and (board[move[1] + 1] == player) and
+                               (move[1] - 1 != move[0]) and (move[1] + 1 != move[0])): #check ring
                                 move_forms_mill.append(move)
-                        if (self.pieces[move[1] - 8] == player and self.pieces[move[1] - 16] == player and
-                           move[1] - 8 != move[0] and move[1] - 16 != move[0]): #check intersections
+                        if ((board[move[1] - 8] == player) and (board[move[1] - 16] == player) and
+                           (move[1] - 8 != move[0]) and (move[1] - 16 != move[0])): #check intersections
                                 move_forms_mill.append(move)
-                
+
         return list(move_forms_mill)
-    
+
     """
     Looks at the board and returns all current mills for a given player, in tuples of their coordinates
     IDEA: maybe not in tuples, but in a set of coordinates
     """
     def check_for_mills(self, player):
-        
+
         current_mills = []
-        
+        array = self.piecesToArray()
+        board = array[0]
+
         index = 0
-        
+
         while index < 23: #check rings
-            if (self.pieces[index] == self.pieces[index + 1] == self.pieces[index + 2] == player):
-                current_mills.append((index, index + 1, index + 2))    
-            
+            if (index in [6,14,22]):
+                if (board[index] == board[index + 1] == board[index - 6] == player):
+                    current_mills.append((index, index + 1, index - 6))
+            elif (board[index] == board[index + 1] == board[index + 2] == player):
+                current_mills.append((index, index + 1, index + 2))
+
             index += 2
-        
+
         index = 1
-        
+
         while index < 8: #check intersections
-            if (self.pieces[index] == self.pieces[index + 8] == self.pieces[index + 16] == player):
+            if (board[index] == board[index + 8] == board[index + 16] == player):
                 current_mills.append((index, index + 8, index + 16))
-            
+
             index += 2
-            
+
         return list(current_mills)
-    
+
     """
     given a position, this method returns a tuple with all the neighboring positions
     """
     def get_neighbours(self, position):
-        
+
         if position != None:
-                if position % 2 == 0: #position is in a corner
-                    
-                    if position % 8 == 0: # position is in the top left corner of a ring
+                if (position % 2) == 0: #position is in a corner
+
+                    if (position % 8) == 0: # position is in the top left corner of a ring
                         return (position + 1, position + 7)
-                    
+
                     else: #position is in top right, or bottom corners
                         return (position - 1, position + 1)
-                    
+
                 else: #position is in a intersection
                     if position in [1,3,5,7]: #outer ring
                         if position == 7:
                             return (0, 6, 15)
                         else:
                             return (position - 1, position + 1, position + 8)
-                            
-                        
+
+
                     elif position in [9,11,13,15]: #middle ring
                         if position == 15:
                             return (7, 8, 14, 23)
                         else:
                             return (position - 8, position - 1, position + 1, position + 8)
-                        
+
                     elif position in [17,19,21,23]: #outer ring
                         if position == 23:
                             return (15, 16, 22)
                         else:
-                            return (position - 8, position - 1, position + 1) 
-                    
-        
-        return 
-    
+                            return (position - 8, position - 1, position + 1)
+
+
+        return
+
     """
     Looks at the board, given the current player and returns a list
-    with the locations of all pieces outside mills for the current 
+    with the locations of all pieces outside mills for the current
     player
     """
     def get_pieces_outside_mills(self, player):
-        
-        all_pieces = get_player_pieces(self, player)
-        
-        mills = check_for_mills(self, player)
-        
-        remaining_pieces = get_player_pieces(self, player)
-        
+
+        all_pieces = self.get_player_pieces(player)
+
+        mills = self.check_for_mills(player)
+
+        remaining_pieces = self.get_player_pieces(player)
+
         for piece in all_pieces:
             if len(mills) != 0:
                 for mill in mills:
-                    if piece in mill:
+                    if piece in mill and piece in remaining_pieces:
                         remaining_pieces.remove(piece)
-                        
-                
+
+
         return list(remaining_pieces)
-    
+
     """
     Looks at the board, given the current player and identifies all
     legal moves for the current gamestate, given that the player is
     in Phase 0
     """
     def get_legal_moves_0(self, player):
-        
+
         #get enemy pieces that can be taken if a mill is formed
-        enemies_outside_mills = get_pieces_outside_mills(self, -player)
+        enemies_outside_mills = self.get_pieces_outside_mills(-player)
         if len(enemies_outside_mills) > 0:
             enemies_to_take = enemies_outside_mills
         else:
-            enemies_to_take = get_player_pieces(self, -player)
-        
-        
+            enemies_to_take = self.get_player_pieces(-player)
+
+
         #get empty positions, they represent all possible move locations for phase zero
         empty_locations = []
-        for position in get_empty_positions(self):
+        for position in self.get_empty_positions():
             empty_locations.append(('none',position))
-        
+
         #get moves -> for each move_location, check if a mill is formed (check row(s))
-        mill_moves = get_possible_mills(self, empty_locations, player)
-                        
-        
+        mill_moves = self.get_possible_mills(empty_locations, player)
+
+
         #generate action tuples
         moves = []
-        
+
         for move in empty_locations:
             if move in mill_moves:
                 for enemy in enemies_to_take:
-                    moves.append('none',move[1],enemy)
+                    moves.append(('none',move[1],enemy))
             else:
-                moves.append('none',move[1],'none')
-            
-        
+                moves.append(('none',move[1],'none'))
+
+
         return list(moves)
-    
-    
+
+
     """
     Looks at the board, given the current player and identifies all
     legal moves for the current gamestate, given that the player is
     in Phase 1
     """
     def get_legal_moves_1(self, player):
-        
+
         moves = []
-        
+        array = self.piecesToArray()
+        board = array[0]
+
         #get enemy pieces that can be taken if a mill is formed
-        enemies_outside_mills = get_pieces_outside_mills(self, -player)
+        enemies_outside_mills = self.get_pieces_outside_mills(-player)
         if len(enemies_outside_mills) > 0:
             enemies_to_take = enemies_outside_mills
         else:
-            enemies_to_take = get_player_pieces(self, -player)
-            
-        #get the current players pieces that will be moved    
-        current_positions = get_player_pieces(self, player)
-        
+            enemies_to_take = self.get_player_pieces(-player)
+
+        #get the current players pieces that will be moved
+        current_positions = self.get_player_pieces(player)
+
         #creating the first part of the moves
         part_moves = []
-        
+
         for position in current_positions:
-            neighbours = get_neighbours(self, position)
+            neighbours = self.get_neighbours(position)
             index = 0
             while index < len(neighbours):
-                if self.pieces[neighbours[index]] == 0:
-                    part_moves.append(position, neighbours[index])
+                if board[neighbours[index]] == 0:
+                    part_moves.append((position, neighbours[index]))
                 index += 1
-                
+
         #finding the part moves that create mills, then pairing them accordingly with enemy pieces to beat
         #get moves -> for each move_location, check if a mill is formed (check row(s))
-        mill_moves = get_possible_mills(self, part_moves, player)
-                
+        mill_moves = self.get_possible_mills(part_moves, player)
+
         for move in part_moves:
             if move in mill_moves:
                 for enemy in enemies_to_take:
-                    moves.append(move[0],move[1],enemy)
+                    moves.append((move[0],move[1],enemy))
             else:
-                moves.append(move[0],move[1],'none')    
-        
-        
-        
+                moves.append((move[0],move[1],'none'))
+
+
+
         return list(moves)
-    
-    
+
+
     """
     Looks at the board, given the current player and identifies all
     legal moves for the current gamestate, given that the player is
     in Phase 2
     """
     def get_legal_moves_2(self, player):
-        
+
         moves = []
-        
+
         #get enemy pieces that can be taken if a mill is formed
-        enemies_outside_mills = get_pieces_outside_mills(self, -player)
+        enemies_outside_mills = self.get_pieces_outside_mills(-player)
         if len(enemies_outside_mills) > 0:
             enemies_to_take = enemies_outside_mills
         else:
-            enemies_to_take = get_player_pieces(self, -player)
-            
-        #get the current players pieces that will be moved      
-        current_positions = get_player_pieces(self, player)
-        
+            enemies_to_take = self.get_player_pieces(-player)
+
+        #get the current players pieces that will be moved
+        current_positions = self.get_player_pieces(player)
+
         #creating the first part of the moves
         part_moves = []
-        
-        empty_locations = get_empty_positions(self)
-        
+
+        empty_locations = self.get_empty_positions()
+
         #pair the locations of current positions with all empty locations on the board
         for position in current_positions:
             for location in empty_locations:
-                part_moves.append(position, location)
-         
+                part_moves.append((position, location))
+
         #finding the part moves that create mills, then pairing them accordingly with enemy pieces to beat
         #get moves -> for each move_location, check if a mill is formed (check row(s))
-        mill_moves = get_possible_mills(self, part_moves, player)
-                
+        mill_moves = self.get_possible_mills(part_moves, player)
+
         for move in part_moves:
             if move in mill_moves:
                 for enemy in enemies_to_take:
-                    moves.append(move[0],move[1],enemy)
+                    moves.append((move[0],move[1],enemy))
             else:
-                moves.append(move[0],move[1],'none')
-        
+                moves.append((move[0],move[1],'none'))
+
         return list(moves)
-    
-    
+
+
     def has_legal_moves(self, player):
-        
-        return (len(self.get_legal_moves(player)) > 0)
-    
+        if (len(self.get_legal_moves(player)) > 0):
+            return True
+        return False
+
     '''
     rotates the board three times, each time creating a pair of the rotated
     board and the rotated policy array
@@ -558,106 +537,78 @@ class Board():
     NEW IDEA: Use simple Vector addition for the board rotations, but generate
     a lookup vektor for the policy vector, by generating all moves
     '''
-    def get_board_rotations(self, board, pi):               
-        
+    def get_board_rotations(self, board, pi, all_moves, policy_rotation_vector):
+
         #vector to rotate the board 90 degrees -> move each ring by two positions
         rot90_vector = [2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6,2,2,2,2,2,2,-6,-6]
-        
+
+        old_board, countplacements = self.piecesToArray()
         new_board = [0] * 24
-        
+        new_pi = [0] * len(all_moves)
+
         rotated_results = []
-        
+
         #rotates the board 3 times
         for i in range(3):
             index = 0
             while index < 24:
-                new_board[i+rot90_vector[i]]=board[i]
+                new_board[i+rot90_vector[i]]=old_board[i]
                 index+=1
-                
-            board = copy.deepcopy(new_board)
-            
+
             index = 0
-            while index < self.len(all_moves):
-                new_pi[self.policy_rotation_vector[i]] = pi[i]
+            while index < len(all_moves):
+                new_pi[policy_rotation_vector[i]] = pi[i]
                 index += 1
-                
-            pi = copy.deepcopy(new_pi)
-            
-            rotated_results.append((board,pi))
-            
+
+            rotated_results += [(self.arrayToImage(new_board, countplacements),new_pi)]
+
             i+=1
-   
+
         return rotated_results
-        
- 
-    
-    """
-    generates the rotation vector for the policy vector
-    the method is called in the constructor, the rotation
-    vector is only called once
-    """
-    def get_policy_roation90(self):
-    
-        allmoves = self.get_all_moves()
-        rotation90 = [-1] * len(allmoves)
 
-        i = 0
-        while i < len(allmoves):
-  
-            move = allmoves[i]
-            rotatedmove = rotate(move)
-            newindex = allmoves.index(rotatedmove)
-            rotation90[i] = newindex
 
-            i+=1
-        
-        return roation90
-            
-            
-            
-    """
-    takes a move tuple as input, rotates it by 90 degrees and returns the rotated move
-    """
-    def rotate(move):
-        neworigin
-        newdestination
-        newenemy
-        
-        if move[0] == 'none':
-            neworigin = 'none'
 
-        elif move[0] in [6,7,14,15,22,23]:
-            neworigin = move[0] - 6
+    def execute_move(self, player, move_index, all_moves, current_moves):
 
-        else:
-            neworigin = move[0] + 2
+        move = all_moves[move_index]
+        assert(len(move)==3) #move is a tuple of length 3
+        array = self.piecesToArray()
+        board = array[0]
+        count_placements = array[1]
 
-        if move[1] in [6,7,14,15,22,23]:
-            newdestination = move[1] - 6
+        try:
+            if self.get_game_phase(player) == 0:
+                count_placements += 1
+            if move[0] != 'none':
+                board[move[0]] = 0
+            if move[2] != 'none':
+                board[move[2]] = 0
+            elif move[2] == 'none':
+                current_moves += 1
+            #self.current_moves = 0
+            #elif move[2] == 'none':
+            #self.current_moves += 1
+            board[move[1]] = player
 
-        else:
-            newdestination = move[1] + 2
-        
-        if move[2] == 'none':
-            newenemy = 'none'
+            image = self.arrayToImage(board, count_placements)
+            self.pieces = np.copy(image)
 
-        elif move[2] in [6,7,14,15,22,23]:
-            newenemy = move[2] - 6
+            return current_moves
 
-        else:
-            newenemy = move[2] + 2
-        
-        return (neworigin, newdestination, newenemy)
-        
+        except IndexError as e:
+            if move[0] != 'none':
+                board[move[0]] = player
+            if move[2] != 'none':
+                board[move[2]] = -player
+            board[move[1]] = 0
 
-    
-    def execute_move(self, board, player, move):
-        if get_game_phase(self, player) == 0:
-            count_placements += 1
-        if move[0] != 'none':
-            self.pieces[move[0]] = 0
-        if move[2] != 'none':
-            self.pieces[move[2]] = 0
-            self.current_moves += 1
-        self.pieces[move[1]] = player
-    
+            print(e)
+            print(board)
+            print(move[0])
+            print(move[1])
+            print(move[2])
+
+
+
+
+

@@ -1,166 +1,205 @@
 from __future__ import print_function
 import sys
 sys.path.append('..')
-from Game import Game
-from .NineMensMorrisLogic import Board
 import numpy as np
+import copy
 
 class NineMensMorrisGame(Game):
+    square_content = {
+        -1: "B",
+        +0: "-",
+        +1: "W"
+    }
 
-    def __init__(self, n):
-        self.n = n
+    def __init__(self):
+      self.n = 5
+      self.all_moves = self.get_all_moves()
+      self.policy_rotation_vector = self.get_policy_roation90()
+      self.current_moves = 0
+      self.MAX_MOVES_WITHOUT_MILL = 50
+
+
+    def get_all_moves(self):
+       moves = self.get_all_moves_phase_zero() + self.get_all_moves_phase_one_and_two()
+       return list(moves)
+
+    def get_policy_roation90(self):
+
+        rotation90 = [-1] * len(self.all_moves)
+
+        i = 0
+        while i < len(self.all_moves):
+
+            move = self.all_moves[i]
+            rotatedmove = self.rotate(move)
+            newindex = self.all_moves.index(rotatedmove)
+            rotation90[i] = newindex
+
+            i+=1
+
+        return rotation90
+
+    def rotate(self, move):
+
+        if move[0] == 'none':
+            neworigin = 'none'
+
+        elif move[0] in [6,7,14,15,22,23]:
+            neworigin = move[0] - 6
+
+        else:
+            neworigin = move[0] + 2
+
+        if move[1] in [6,7,14,15,22,23]:
+            newdestination = move[1] - 6
+
+        else:
+            newdestination = move[1] + 2
+
+        if move[2] == 'none':
+            newenemy = 'none'
+
+        elif move[2] in [6,7,14,15,22,23]:
+            newenemy = move[2] - 6
+
+        else:
+            newenemy = move[2] + 2
+
+        return (neworigin, newdestination, newenemy)
+
+    def get_all_moves_phase_zero(self):
+
+        moves = []
+        index = 0
+
+        while index < 24:
+
+            moves.append(("none",index,"none"))
+            count = 0
+
+            while count < 24:
+
+                if count != index:
+
+                    moves.append(("none",index,count))
+
+                count += 1
+
+            index += 1
+
+        return list(moves)
+
+    def get_all_moves_phase_one_and_two(self):
+
+        moves = []
+        index_origin = 0
+
+        while index_origin < 24:
+
+            index_move = 0
+
+            while index_move < 24:
+
+                if index_move != index_origin:
+
+                    moves.append((index_origin,index_move,"none"))
+
+                    count = 0
+
+                    while count <24:
+
+                        if (count != index_move)and(count != index_origin):
+
+                            moves.append((index_origin,index_move,count))
+
+                        count += 1
+
+                index_move += 1
+
+            index_origin += 1
+
+        return list(moves)
 
     def getInitBoard(self):
-        """
-        Returns:
-            startBoard: a representation of the board (ideally this is the form
-                        that will be the input to your neural network)
-        """
+
         # return initial board
-        b = Board(self.n)
+        b = Board()
+
         return np.array(b.pieces)
 
     def getBoardSize(self):
-        """
-        Returns:
-            (x,y): a tuple of board dimensions
-        """
         # (a,b) tuple
-        return (24, 1)
+        return (5, 5)
 
     def getActionSize(self):
-        """
-        Returns:
-            actionSize: number of all possible actions
-        
-        What are all possible actions? Viewed from one player, each piece can
-        be placed anywhere on the map, makes 24 actions per piece. If a mill 
-        is formed, with that move, the acting player gets to remove a piece 
-        from the oppenent. That makes 48 actions per piece in total.
-        24*24 -> Actions in Phase 0 (24 positions to place, 23 positions to 
-        take or none (+1)
-        24*23*23 -> Actions in Phases 1 and 2 (24 possible origins, 23 
-        positions to move to, 
-        22 pieces to take  or none (+1)
-        The result in total should come to 576 + 12696 = 13272
-        """
         # return number of actions
-        return len(b.get_all_moves())
+        return len(self.all_moves)
 
     def getNextState(self, board, player, move):
-        """
-        Input:
-            board: current board
-            player: current player (1 or -1)
-            action: action taken by current player
-
-        Returns:
-            nextBoard: board after applying action
-            nextPlayer: player who plays in the next turn (should be -player)
-        """
         # if player takes action on board, return next (board,player)
         # action must be a valid move
-        if action == self.n*self.n:
-            return (board, -player)
-        b = Board(self.n)
+        b = Board()
         b.pieces = np.copy(board)
-        move = (int(action/self.n), action%self.n)
-        b.execute_move(move, player)
+
+        try:
+          self.current_moves  = b.execute_move(player, move, self.all_moves, self.current_moves)
+        except IndexError as e:
+          print(e)
+          print(player)
+          print(move)
+
         return (b.pieces, -player)
 
     def getValidMoves(self, board, player):
-        """
-        Input:
-            board: current board
-            player: current player
-
-        Returns:
-            validMoves: a binary vector of length self.getActionSize(), 1 for
-                        moves that are valid from the current board and player,
-                        0 for invalid moves
-        """
         # return a fixed size binary vector
-        valids = [0]*self.getActionSize()
-        b = Board(self.n)
+        b = Board()
         b.pieces = np.copy(board)
-        legalMoves =  b.get_legal_moves(player)
-        if len(legalMoves)==0:
-            valids[-1]=1
-            return np.array(valids)
-        for x, y in legalMoves:
-            valids[self.n*x+y]=1
-        return np.array(valids)
+        valid_moves = b.get_legal_move_vector(player, self.all_moves)
+
+        return np.array(valid_moves)
 
     def getGameEnded(self, board, player):
-        """
-        Input:
-            board: current board
-            player: current player (1 or -1)
-
-        Returns:
-            r: 0 if game has not ended. 1 if player won, -1 if player lost,
-               small non-zero value for draw.
-               
-        """
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
-        b = Board(self.n)
-        b.pieces = np.copy(board)
+        if isinstance(board, str):
+          b = Board()
+          counter = 0
+          for element in board:
+            b.pieces[counter] = int(element)
+            counter += 1
+        else:
+          b = Board()
+          b.pieces = np.copy(board)
         if b.has_legal_moves(player):
             return 0
+        elif not b.has_legal_moves(player):
+            return -1
         if b.has_legal_moves(-player):
             return 0
+        elif not b.has_legal_moves(-player):
+            return 1
         if len(b.get_player_pieces(player)) < 3:
-            return -player
+            return -1
         if len(b.get_player_pieces(-player)) < 3:
-            return player
-        if b.current_moves >= b.MAX_MOVES_WITHOUT_MILL:
+            return 1
+        if b.pieces[24] >= b.MAX_MOVES_WITHOUT_MILL:
             return 0.1
 
     def getCanonicalForm(self, board, player):
-        """
-        Input:
-            board: current board
-            player: current player (1 or -1)
-
-        Returns:
-            canonicalBoard: returns canonical form of board. The canonical form
-                            should be independent of player. For e.g. in chess,
-                            the canonical form can be chosen to be from the pov
-                            of white. When the player is white, we can return
-                            board as is. When the player is black, we can invert
-                            the colors and return the board.
-        """
-        # return state if player==1, else return -state if player==-1
         return player*board
 
     def getSymmetries(self, board, pi):
-        """
-        Input:
-            board: current board
-            pi: policy vector of size self.getActionSize()
-            
-            Rotate the Board with a rotation vector, that defines the index for
-            current value transformed to the rotated board.
 
-        Returns:
-            symmForms: a list of [(board,pi)] where each tuple is a symmetrical
-                       form of the board and the corresponding pi vector. This
-                       is used when training the neural network from examples.
-        """
-        
-        
-        
-            
-       
+        assert(len(pi) == len(self.all_moves))
+        b = Board()
+        b.pieces = np.copy(board)
+        results = b.get_board_rotations(board, pi, self.all_moves, self.policy_rotation_vector)
+
+        return results
 
     def stringRepresentation(self, board):
-        """
-        Input:
-            board: current board
-
-        Returns:
-            boardString: a quick conversion of board to a string format.
-                         Required by MCTS for hashing.
-        """
         return board.tostring()
+
+    def stringRepresentationReadable(self, board):
+        board_s = "".join(self.square_content[square] for row in board for square in row)
+        return board_s
