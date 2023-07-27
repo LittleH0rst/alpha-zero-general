@@ -12,18 +12,7 @@ from NeuralNet import NeuralNet
 import torch
 import torch.optim as optim
 
-
-import os
-import sys
-import time
-
-import numpy as np
-from tqdm import tqdm
-
-sys.path.append('../../')
-
-import torch
-import torch.optim as optim
+from .NineMensMorrisNNet import NineMensMorrisNNet
 
 args = dotdict({
      'lr': 0.001,

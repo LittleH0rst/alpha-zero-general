@@ -17,4 +17,7 @@ Both the Keras NNet and the PyTorch NNet are copied from othello, it can surely 
 ### Understanding this implementation
 The important files for the Game Logic are NineMensMorrisGame.py and NineMensMorrisLogic.py. 
 
+### Training a model
+To train a model, 
+
  

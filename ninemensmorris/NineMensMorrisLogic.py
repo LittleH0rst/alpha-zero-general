@@ -4,6 +4,7 @@ Created: May 31, 2023
 
 Implementation of the NineMensMorris Game Logic
 '''
+import numpy as np
 
 class Board():
 
