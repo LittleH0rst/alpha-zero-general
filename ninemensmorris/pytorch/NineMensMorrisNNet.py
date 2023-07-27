@@ -1,6 +1,5 @@
 import sys
 sys.path.append('..')
-from utils import *
 
 import argparse
 import torch
@@ -8,6 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+"""
+Copied from:
+https://github.com/suragnair/alpha-zero-general/blob/master/othello/pytorch/OthelloNNet.py
+"""
 class NineMensMorrisNNet(nn.Module):
     def __init__(self, game, args):
         # game params
@@ -52,3 +55,5 @@ class NineMensMorrisNNet(nn.Module):
         v = self.fc4(s)                                                                          # batch_size x 1
 
         return F.log_softmax(pi, dim=1), torch.tanh(v)
+
+

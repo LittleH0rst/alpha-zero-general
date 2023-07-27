@@ -12,26 +12,42 @@ from NeuralNet import NeuralNet
 import torch
 import torch.optim as optim
 
-from .NineMensMorrisNNet import NineMensMorrisNNet as onnet
+
+import os
+import sys
+import time
+
+import numpy as np
+from tqdm import tqdm
+
+sys.path.append('../../')
+
+import torch
+import torch.optim as optim
 
 args = dotdict({
-    'lr': 0.001,
-    'dropout': 0.3,
-    'epochs': 10,
-    'batch_size': 64,
-    'cuda': torch.cuda.is_available(),
-    'num_channels': 512,
+     'lr': 0.001,
+     'dropout': 0.3,
+     'epochs': 10,
+     'batch_size': 64,
+     'cuda': torch.cuda.is_available(),
+     'num_channels': 512,
 })
 
-
+"""
+Copied from:
+https://github.com/suragnair/alpha-zero-general/blob/master/othello/pytorch/NNet.py
+Adapted the load and save methods to save and load in google drive from colab
+"""
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
-        self.nnet = onnet(game, args)
+        self.nnet = NineMensMorrisNNet(game, args)
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
 
         if args.cuda:
-            self.nnet.cuda()
+            #self.nnet.cuda.set_device({"cuda:0"})
+            self.nnet.to("cuda:0")
 
     def train(self, examples):
         """
@@ -99,22 +115,26 @@ class NNetWrapper(NeuralNet):
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]
 
-    def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
-        filepath = os.path.join(folder, filename)
+    def save_checkpoint(self, folder, filename):
+        filepath = folder + filename
         if not os.path.exists(folder):
             print("Checkpoint Directory does not exist! Making directory {}".format(folder))
             os.mkdir(folder)
         else:
             print("Checkpoint Directory exists! ")
+            print("saving to path '%s", filepath)
         torch.save({
             'state_dict': self.nnet.state_dict(),
         }, filepath)
 
-    def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
+    def load_checkpoint(self, folder, filename):
         # https://github.com/pytorch/examples/blob/master/imagenet/main.py#L98
-        filepath = os.path.join(folder, filename)
+        filepath = folder + filename
+        print("Trying to load checkpoint")
         if not os.path.exists(filepath):
             raise ("No model in path {}".format(filepath))
         map_location = None if args.cuda else 'cpu'
         checkpoint = torch.load(filepath, map_location=map_location)
         self.nnet.load_state_dict(checkpoint['state_dict'])
+
+
