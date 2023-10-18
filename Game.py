@@ -29,7 +29,7 @@ class Game():
     def getActionSize(self):
         """
         Returns:
-            actionSize: number of all possible actions   
+            actionSize: number of all possible actions
         """
         pass
 

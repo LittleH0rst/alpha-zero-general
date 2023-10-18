@@ -48,7 +48,7 @@ def main():
         log.info('Loading checkpoint "%s/%s"...', args.load_folder_file[0], args.load_folder_file[1])
         nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
     else:
-       log.warning('Not loading a checkpoint!')
+        log.warning('Not loading a checkpoint!')
 
     log.info('Loading the Coach...')
     c = Coach(g, nnet, args)
